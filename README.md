@@ -1,6 +1,12 @@
 # threadpool.c
 Massively concurrent threadpool for Windows on C, using native `CreateThread` threads and [perfect_stack.h](https://github.com/cristeigabriel/perfect_stack.h) for atomic lockless work polling.
 
+# Technique
+- threadpool.c checks how many cores you have, takes in how many threads you want per core, then it goes over every core, assigning the process to it exclusively while the thread is created, and then re-assigns the process to whichever cores it was previously assigned to. As a result, the threads are created in place, and the `HANDLE` is assigned into a vector.
+- When you push a task, the threads must be prepared, and as a result, they will be polling constantly for work. If they have nothing to poll for, they sleep for about 500ms (currently, this should change!). When they get work, they execute it and continue polling again. Basically, pushing is concurrent, lockless, and safe.
+- Threads constantly check if they've been told to terminate themselves (atomically, CAS), and if that is so, then they only continue working until the workload is finished, then they terminate.
+- When the threadpool should terminate, it does a blocking operation waiting for the threads to finish, by using `WaitForMultipleObjects` and explicitly waiting for them to `SIGNAL`, then it closes and `NULL`-s the handles, frees the vector and stack of workload.
+
 # Results
 I don't have the time to conduct proper benchmarking and great tests at the moment, because I only allowed myself the weekend at the time of writing for this (preparing for technical interviews with a big company), [perfect_stack.h](https://github.com/cristeigabriel/perfect_stack.h) and an education async engine for C on Windows, but my tests were the following:
 
