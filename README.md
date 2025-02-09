@@ -2,7 +2,7 @@
 Massively concurrent threadpool for Windows on C, using native `CreateThread` threads and [perfect_stack.h](https://github.com/cristeigabriel/perfect_stack.h) for atomic lockless work polling.
 
 # Results
-I don't have the time to conduct proper benchmarking and great tests at the moment, because I only allowed myself the weekend at the time of writing for this, [perfect_stack.h](https://github.com/cristeigabriel/perfect_stack.h) and an education async engine for C on Windows, but my tests were the following:
+I don't have the time to conduct proper benchmarking and great tests at the moment, because I only allowed myself the weekend at the time of writing for this (preparing for technical interviews with a big company), [perfect_stack.h](https://github.com/cristeigabriel/perfect_stack.h) and an education async engine for C on Windows, but my tests were the following:
 
 On a setup with **8** cores, I was able to confidently run **200** threads per core `(8 * 200 = 1600)` and up to **200** workers per thread `(200 * 1600 = 32000)` (NOTE: the workers were not *assigned* to a thread, the number of threads was merely used as a metric for how many workers to push). On this setup, there were no polling task repeats, or skips. All tasks completed correctly. The curious may play around with [tp_test.c](./tp_test.c) and see what's what on their end!
 
