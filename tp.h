@@ -26,8 +26,7 @@ extern "C" {
 #define WORK_ARG(a) (void*)(((a).worker)-((a).arg))
 
 	STACK(WORK)
-
-		typedef struct {
+	typedef struct {
 		HANDLE* h_threads;
 		int n_threads;
 		Stack_WORK workload;

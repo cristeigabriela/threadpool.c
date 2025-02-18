@@ -11,8 +11,8 @@ static
 DWORD _stdcall poll_work(PTHREADPOOL ctx)
 {
 Lrestart:
-	PWORK work = {};
-	while (NULL == (work = Stack_pop_WORK(&ctx->workload))) {
+	WORK work = {};
+	while (0 == (Stack_pop_WORK(&ctx->workload, &work))) {
 		// Check if threadpool should perish
 		if (_InterlockedCompareExchange(&g_finished, 1, 1) != 0) {
 			return 0;
@@ -20,8 +20,8 @@ Lrestart:
 		Sleep(500);
 	}
 
-	worker_t worker = WORK_WORKER(*work);
-	void *arg = WORK_ARG(*work);
+	worker_t worker = WORK_WORKER(work);
+	void *arg = WORK_ARG(work);
 	worker(arg);
 	goto Lrestart;
 }
@@ -176,7 +176,25 @@ void tp_done(PTHREADPOOL threadpool)
 	InterlockedExchange(&g_finished, 1);
 
 	// Wait for threads to signal finished workload
-	WaitForMultipleObjects(threadpool->n_threads, threadpool->h_threads, TRUE, INFINITE);
+	for (int i = 0; i < threadpool->n_threads; i += 64) {
+		int n_threads = {};
+		const HANDLE* h_threads;
+		DWORD result = {};
+		
+		n_threads = min(64, threadpool->n_threads - i);
+		h_threads = &threadpool->h_threads[i];
+		result = WaitForMultipleObjects(n_threads, h_threads, TRUE, INFINITE);
+#if TP_DEBUG
+		if (WAIT_FAILED == result) {
+			__debugbreak();
+		}
+		else {
+			printf("succeeded! %d %d\n", result, n_threads);
+		}
+#else
+		UNREFERENCED_PARAMETER(result);
+#endif
+	}
 
 	// Close handles
 	for (int i = 0; i < threadpool->n_threads; i++) {
